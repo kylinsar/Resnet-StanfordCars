@@ -146,7 +146,7 @@ if __name__ == '__main__':
 
     # 迁移学习
     num_features = model_ft.fc.in_features
-    model_ft.fc = nn.Linear(num_features, num_class + 1)  # 将resnet50 fc features替换为类别总数
+    model_ft.fc = nn.Linear(num_features, num_class)  # 将resnet50 fc features替换为类别总数
 
     # cuda setting
     if use_gpu:
@@ -163,14 +163,14 @@ if __name__ == '__main__':
 
     # train model
     model_ft = train_model(
-        model=model_ft,
-        # model=torch.load('Best_Resnet_152.pkl'),  # 测试已经训练好的模型用这行
+        # model=model_ft,
+        model=torch.load('Best_Resnet_152.pkl'),  # 测试已经训练好的模型用这行
         # model = ResNetModel(197,[3, 4, 6, 3]],True), # Resnet手动实现用这行
         criterion=criterion,  # 损失函数
         optimizer=optimizer_ft,  # 优化器
         scheduler=exp_lr_scheduler,  # 调整LR
         num_epochs=10,  # 训练次数
-        use_gpu=False,
+        use_gpu=True,
         only_val=True)
     # save best model
     torch.save(model_ft, "./output/Best_Resnet_152.pkl")
