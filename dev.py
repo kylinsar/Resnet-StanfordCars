@@ -3,6 +3,7 @@ import torch
 from torch.autograd import Variable
 from PIL import Image
 from torchvision import transforms
+import torch.nn.functional as F
 
 # 此文件用于单图片预测测试
 transform1 = transforms.Compose([
@@ -19,11 +20,11 @@ transform1 = transforms.Compose([
 ])
 data = scipy.io.loadmat('cars_meta.mat')
 model = torch.load('Best_Resnet_152.pkl')
-test = Image.open('.test.jpg').convert('RGB')
+test = Image.open('./val/00001.jpg').convert('RGB')
 test = transform1(test)
 test = test.reshape(1, 3, 224, 224)
 inputs = Variable(test.cuda())
 outputs = model(inputs)
 _, preds = torch.max(outputs.data, 1)
 preds = (preds.cpu().numpy().tolist())[0]
-print(data['class_names'][0][preds - 1])
+print(data['class_names'][0][preds - 1], torch.max(F.softmax(outputs)).item())
