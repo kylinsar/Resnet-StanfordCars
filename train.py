@@ -12,6 +12,7 @@ from torchvision import models
 
 from customData import customData
 import data_transform
+from resnet_model import ResNetModel
 
 warnings.filterwarnings("ignore", category=UserWarning)
 
@@ -21,7 +22,10 @@ annotations = data['annotations']
 with open('./train.txt', 'w') as f_train:
     for i in range(annotations.shape[1]):
         num = int(annotations[0, i][4])
-        f_train.write(str(num) + '\n')
+        if i != annotations.shape[1] - 1:
+            f_train.write(str(num - 1) + '\n')
+        else:
+            f_train.write(str(num - 1))
 
 # use scipy.io.loadmat to read .mat file(val)
 data = scipy.io.loadmat('cars_test_annos_withlabels.mat')
@@ -29,10 +33,13 @@ annotations = data['annotations']
 with open('./val.txt', 'w') as f_train:
     for i in range(annotations.shape[1]):
         num = int(annotations[0, i][4])
-        f_train.write(str(num) + '\n')
+        if i != annotations.shape[1] - 1:
+            f_train.write(str(num - 1) + '\n')
+        else:
+            f_train.write(str(num - 1))
 
 
-def train_model(model, criterion, optimizer, scheduler, num_epochs, use_gpu, only_val=True):
+def train_model(model, criterion, optimizer, scheduler, num_epochs, use_gpu, only_val):
     """
     训练模型
     :param model: 模型
@@ -41,7 +48,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs, use_gpu, onl
     :param scheduler: 调整LR
     :param num_epochs: epochs times
     :param use_gpu: according to cuda.is_available()
-    :param only_val: 是否仅验证
+    :param only_val: 0:train|1:val|2:double
     :return: model
     """
     since = time.perf_counter()  # train start time
@@ -51,7 +58,7 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs, use_gpu, onl
     for epoch in range(num_epochs):
         begin_time = time.perf_counter()
         print(f'Epoch {epoch + 1}/{num_epochs}')
-        for phase in (['val'] if only_val else ['train', 'val']):
+        for phase in (['val'] if only_val == 1 else (['train'] if only_val == 0 else ['train', 'val'])):
             count_batch = 0
             if phase == 'train':
                 scheduler.step()  # 调整模型中学习率的超参数
@@ -122,7 +129,8 @@ def train_model(model, criterion, optimizer, scheduler, num_epochs, use_gpu, onl
 
 if __name__ == '__main__':
     # cuda状态
-    use_gpu = torch.cuda.is_available()
+    # use_gpu = torch.cuda.is_available()
+    use_gpu = True
     print('cuda status:', use_gpu)
 
     # batch_size and num_class
@@ -163,14 +171,14 @@ if __name__ == '__main__':
 
     # train model
     model_ft = train_model(
-        # model=model_ft,
-        model=torch.load('Best_Resnet_152.pkl'),  # 测试已经训练好的模型用这行
-        # model = ResNetModel(197,[3, 4, 6, 3]],True), # Resnet手动实现用这行
+        model=model_ft,
+        # model=torch.load('.pkl'),  # 测试已经训练好的模型用这行
+        # model=ResNetModel(197, [3, 4, 6, 3], True),  # Resnet手动实现用这行
         criterion=criterion,  # 损失函数
         optimizer=optimizer_ft,  # 优化器
         scheduler=exp_lr_scheduler,  # 调整LR
-        num_epochs=10,  # 训练次数
-        use_gpu=True,
-        only_val=True)
+        num_epochs=25,  # 训练次数
+        use_gpu=use_gpu,
+        only_val=2)
     # save best model
     torch.save(model_ft, "./output/Best_Resnet_152.pkl")
